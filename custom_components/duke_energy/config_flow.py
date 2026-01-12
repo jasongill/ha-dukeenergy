@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import jwt
-
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
 from homeassistant.helpers import config_entry_oauth2_flow
 
@@ -71,13 +70,12 @@ class DukeEnergyOAuth2FlowHandler(
             return self.async_abort(reason="oauth_error")
 
         await self.async_set_unique_id(user_id)
-        self._abort_if_unique_id_configured()
-
         if self.source == SOURCE_REAUTH:
             self._abort_if_unique_id_mismatch(reason="wrong_account")
             return self.async_update_reload_and_abort(
                 self._get_reauth_entry(),
                 data_updates=data,
             )
+        self._abort_if_unique_id_configured()
 
         return self.async_create_entry(title=email or user_id, data=data)
