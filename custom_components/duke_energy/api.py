@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from aiodukeenergy import AbstractDukeEnergyAuth
+
+if TYPE_CHECKING:
+    import aiohttp
+    from homeassistant.helpers.config_entry_oauth2_flow import OAuth2Session
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +17,11 @@ _LOGGER = logging.getLogger(__name__)
 class DukeEnergyAuth(AbstractDukeEnergyAuth):
     """Provide Duke Energy authentication tied to an OAuth2 based config entry."""
 
-    def __init__(self, websession, oauth_session) -> None:
+    def __init__(
+        self,
+        websession: aiohttp.ClientSession,
+        oauth_session: OAuth2Session,
+    ) -> None:
         """Initialize Duke Energy auth."""
         super().__init__(websession)
         self._oauth_session = oauth_session

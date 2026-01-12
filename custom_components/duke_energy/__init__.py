@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from aiodukeenergy import DukeEnergy
-from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import aiohttp_client, config_entry_oauth2_flow
 
@@ -13,6 +13,9 @@ from .api import DukeEnergyAuth
 from .const import DOMAIN
 from .coordinator import DukeEnergyConfigEntry, DukeEnergyCoordinator
 from .oauth import DukeEnergyOAuth2Implementation
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,9 +31,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: DukeEnergyConfigEntry) -
 
     # Check if this is an old entry that needs reauth
     if not entry.data.get("token"):
-        raise ConfigEntryAuthFailed(
-            "Authentication method has changed. Please reauthenticate."
-        )
+        msg = "Authentication method has changed. Please reauthenticate."
+        raise ConfigEntryAuthFailed(msg)
 
     implementation = (
         await config_entry_oauth2_flow.async_get_config_entry_implementation(
@@ -54,7 +56,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: DukeEnergyConfigEntry) -
     return True
 
 
-async def async_migrate_entry(hass, entry: DukeEnergyConfigEntry):
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: DukeEnergyConfigEntry
+) -> bool:
     """Cannot migrate without reauth."""
     if entry.version == 1:
         hass.config_entries.async_update_entry(
@@ -63,6 +67,8 @@ async def async_migrate_entry(hass, entry: DukeEnergyConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: DukeEnergyConfigEntry) -> bool:
+async def async_unload_entry(
+    _hass: HomeAssistant, _entry: DukeEnergyConfigEntry
+) -> bool:
     """Unload a config entry."""
     return True

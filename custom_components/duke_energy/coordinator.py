@@ -1,13 +1,14 @@
 """Coordinator to handle Duke Energy connections."""
 
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 from typing import Any, cast
 
 from aiodukeenergy import DukeEnergy, DukeEnergyAuthError
 from aiohttp import ClientError
-
-from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder import (
+    get_instance,  # pyright: ignore[reportPrivateImportUsage]
+)
 from homeassistant.components.recorder.models import (
     StatisticData,
     StatisticMeanType,
@@ -63,9 +64,9 @@ class DukeEnergyCoordinator(DataUpdateCoordinator[None]):
         def _dummy_listener() -> None:
             pass
 
-        # Force the coordinator to periodically update by registering at least one listener.
+        # Force the coordinator to periodically update.
         # Duke Energy does not provide forecast data, so all information is historical.
-        # This makes _async_update_data get periodically called so we can insert statistics.
+        # This makes _async_update_data get periodically called to insert statistics.
         self.async_add_listener(_dummy_listener)
 
         self.config_entry.async_on_unload(self._clear_statistics)
@@ -100,7 +101,12 @@ class DukeEnergyCoordinator(DataUpdateCoordinator[None]):
             )
 
             last_stat = await get_instance(self.hass).async_add_executor_job(
-                get_last_statistics, self.hass, 1, consumption_statistic_id, True, set()
+                get_last_statistics,
+                self.hass,
+                1,
+                consumption_statistic_id,
+                True,  # noqa: FBT003
+                set(),
             )
             if not last_stat:
                 _LOGGER.debug("Updating statistic for the first time")
@@ -110,7 +116,7 @@ class DukeEnergyCoordinator(DataUpdateCoordinator[None]):
             else:
                 usage = await self._async_get_energy_usage(
                     meter,
-                    last_stat[consumption_statistic_id][0]["start"],
+                    last_stat[consumption_statistic_id][0]["start"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
                 )
                 if not usage:
                     _LOGGER.debug("No recent usage data. Skipping update")
@@ -125,8 +131,11 @@ class DukeEnergyCoordinator(DataUpdateCoordinator[None]):
                     None,
                     {"sum"},
                 )
-                consumption_sum = cast(float, stats[consumption_statistic_id][0]["sum"])
-                last_stats_time = stats[consumption_statistic_id][0]["start"]
+                consumption_sum = cast(
+                    "float",
+                    stats[consumption_statistic_id][0]["sum"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                )
+                last_stats_time = stats[consumption_statistic_id][0]["start"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
 
             consumption_statistics = []
 
@@ -168,14 +177,15 @@ class DukeEnergyCoordinator(DataUpdateCoordinator[None]):
     async def _async_get_energy_usage(
         self, meter: dict[str, Any], start_time: float | None = None
     ) -> dict[datetime, dict[str, float | int]]:
-        """Get energy usage.
+        """
+        Get energy usage.
 
-        If start_time is None, get usage since account activation (or as far back as possible),
-        otherwise since start_time - 30 days to allow corrections in data.
+        If start_time is None, get usage since account activation (or as far
+        back as possible), otherwise since start_time - 30 days to allow
+        corrections in data.
 
         Duke Energy provides hourly data all the way back to ~3 years.
         """
-
         # All of Duke Energy Service Areas are currently in America/New_York timezone
         # May need to re-think this if that ever changes and determine timezone based
         # on the service address somehow.

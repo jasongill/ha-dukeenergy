@@ -6,8 +6,8 @@
   "dependencies": ["recorder"],
   "documentation": "https://github.com/hunterjm/ha-dukeenergy",
   "integration_type": "service",
-  "issue_tracker": "https://github.com/hunterjm/ha-dukeenergy/issues",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/hunterjm/ha-dukeenergy/issues",
   "requirements": ["aiodukeenergy==1.0.0"],
   "version": "0.1.0"
 }

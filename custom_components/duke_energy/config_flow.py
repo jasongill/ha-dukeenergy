@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import jwt
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
@@ -12,6 +11,9 @@ from homeassistant.helpers import config_entry_oauth2_flow
 
 from .const import DOMAIN
 from .oauth import DukeEnergyOAuth2Implementation
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,15 +35,13 @@ class DukeEnergyOAuth2FlowHandler(
         return _LOGGER
 
     async def async_step_pick_implementation(
-        self, user_input: dict[str, Any] | None = None
+        self, _: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle picking implementation - directly use our implementation."""
         self.flow_impl = DukeEnergyOAuth2Implementation(self.hass)
         return await self.async_step_auth()
 
-    async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, _: Mapping[str, Any]) -> ConfigFlowResult:
         """Perform reauth upon an API authentication error."""
         return await self.async_step_reauth_confirm()
 
@@ -61,8 +61,8 @@ class DukeEnergyOAuth2FlowHandler(
             token_data = jwt.decode(id_token, options={"verify_signature": False})
             user_id = token_data.get("internal_identifier", "").lower()
             email = token_data.get("email", "").lower()
-        except (KeyError, ValueError) as err:
-            _LOGGER.error("Failed to decode ID token: %s", err)
+        except (KeyError, ValueError):
+            _LOGGER.exception("Failed to decode ID token")
             return self.async_abort(reason="oauth_error")
 
         if not user_id:
